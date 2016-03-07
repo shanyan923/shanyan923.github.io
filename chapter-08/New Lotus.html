@@ -5,7 +5,7 @@
 <head>
     <title>Example 08.09 - Load stl model </title>
     <script type="text/javascript" src="../libs/three.js"></script>
-    <script type="text/javascript" src="../libs/STLLoader.js"></script>
+    <script type="text/javascript" src="../libs/OBJLoader.js"></script>
 
     <script type="text/javascript" src="../libs/stats.js"></script>
     <script type="text/javascript" src="../libs/dat.gui.js"></script>
@@ -113,13 +113,13 @@
 
             this.translate = function () {
 
-                group.translateX(controls.translateX);
-                group.translateY(controls.translateY);
-                group.translateZ(controls.translateZ);
+                loadedMesh.translateX(controls.translateX);
+                loadedMesh.translateY(controls.translateY);
+                loadedMesh.translateZ(controls.translateZ);
 
-                controls.positionX = group.position.x;
-                controls.positionY = group.position.y;
-                controls.positionZ = group.position.z;
+                controls.positionX = loadedMesh.position.x;
+                controls.positionY = loadedMesh.position.y;
+                controls.positionZ = loadedMesh.position.z;
             }
 
 
@@ -177,7 +177,7 @@
             
 
         // import model
-        var loader = new THREE.STLLoader();
+        /*var loader = new THREE.STLLoader();
         var group = new THREE.Object3D();
         loader.load("../assets/models/lotus.stl", function (geometry) {
             console.log(geometry);
@@ -186,7 +186,27 @@
             group.rotation.x = -0.5 * Math.PI;
             group.scale.set(19, 19, 19);
             scene.add(group);
+        });*/
+        
+        var loader = new THREE.OBJLoader();
+        loader.load('../assets/models/flower.obj', function (loadedMesh) {
+            var material = new THREE.MeshLambertMaterial({color: 0x7777ff});
+
+            // loadedMesh is a group of meshes. For
+            // each mesh set the material, and compute the information
+            // three.js needs for rendering.
+            loadedMesh.children.forEach(function (child) {
+                child.material = material;
+                child.geometry.computeFaceNormals();
+                child.geometry.computeVertexNormals();
+            });
+
+            mesh = loadedMesh;
+            loadedMesh.scale.set(19, 19, 19);
+            loadedMesh.rotation.x = -0.5* Math.PI;
+            scene.add(loadedMesh);
         });
+
 
 
         render();
@@ -195,15 +215,15 @@
         function render() {
             stats.update();
             orbit.update();
-            group.scale.set(controls.scaleX, controls.scaleY, controls.scaleZ);
+            loadedMesh.scale.set(controls.scaleX, controls.scaleY, controls.scaleZ);
 
-            if (group) {
-                group.rotation.z += 0.006;
+            if (loadedMesh) {
+                loadedMesh.rotation.z += 0.006;
                 // group.rotation.x+=0.006;
             }
 
             // render using requestAnimationFrame
-            group.rotation.z = step += controls.rotationSpeed;
+            loadedMesh.rotation.z = step += controls.rotationSpeed;
             requestAnimationFrame(render);
             webGLRenderer.render(scene, camera);
         }
