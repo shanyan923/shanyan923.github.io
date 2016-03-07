@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Example 08.16 - Load vrml model </title>
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <script type="text/javascript" src="../libs/STLLoader.js"></script>
+
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <script type="text/javascript" src="../libs/OrbitControls.js"></script>
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            margin: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="Stats-output">
+</div>
+<!-- Div which will hold the Output -->
+<div id="WebGL-output">
+</div>
+
+<!-- Javascript code that runs our Three.js examples -->
+<script type="text/javascript">
+
+    // once everything is loaded, we run our Three.js stuff.
+    function init() {
+
+        var stats = initStats();
+
+
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        var scene = new THREE.Scene();
+        scene.fog = new THREE.Fog(0x000000, 0.0010, 500);
+
+        // create a camera, which defines where we're looking at.
+        var camera = new THREE.PerspectiveCamera(56, window.innerWidth / window.innerHeight, 0.1, 2000);
+        //1) 55 means the FOV=Field of View, for our humans, we have an almost 180-degree FOV, but most ofen a FOV between 60 and 90 degree is choosen in game, the good default is 50.   
+
+        //2) window.innerWidth means the aspect ratio=屏幕高宽比，between the horizontal and vertical sizes of the area where to render the output
+        
+        //3) 0.1 is the near property which defines from how close to the camera Three.js should render the scene. Normally, we set this to a very small value to directly render everything from the positon of the camera. good default is 0.1
+        
+        //4) the last one is the far property which defines how far the camera can see from the postion of the camera. If we set this too low, a part of our scene might not be rendered, and if we set it too high, in some cases, it might affect the rendering performance
+
+        // create a render and set the size
+        var webGLRenderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0x000000, 1.0));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        webGLRenderer.shadowMapEnabled = true;
+
+        //create the ground plane
+
+        /*var textureForest = THREE.ImageUtils.loadTexture("../assets/textures/ground/darkforest.jpg");
+        textureForest.wrapS = THREE.ReapeatWrapping;
+        textureForest.wrapT = THREE.ReapeatWrapping;
+        textureForest.repeat.set(4,4);
+
+        var planeGeometry = new THREE.planeGeometry(1000, 200, 20, 20);
+        var planeMaterial = new THREE.MeshLambertMaterial({map: textureForest});
+        var plane = new THREE.Mesh(planeGeometry, planeMaterial);
+        plane.receiveShadow = true;
+
+        plane.rotation.x = -0.5 * Math.PI;
+        plane.position.x = 15;
+        plane.position.y = 0;
+        plane.position.z = 0;
+
+        // add the plane to the scene
+        scene.add(plane);*/
+
+
+        // position and point the camera to the center of the scene
+        camera.position.x = 120;
+        camera.position.y = 100;
+        camera.position.z = 120;
+        camera.lookAt(new THREE.Vector3(0, 20, 0));
+
+        var orbit = new THREE.OrbitControls(camera);
+
+        /*var listener1 = new THREE.AudioListener();
+        camera.add(listener1);
+
+        var sound1 = new THREE.Audio(listener1);
+        sound1.load('../assets/audio/shan.ogg');
+        sound1.setRefDistance(30);
+        sound1.setLoop(true);
+        sound1.setRolloffFactor(2);
+        scene.add(sound1);*/
+
+
+
+        var dir1 = new THREE.DirectionalLight(0xffffff,0.25);
+        dir1.position.set(-500, 500, -500);
+        scene.add(dir1);
+
+        var dir2 = new THREE.DirectionalLight(0xffffff,0.2);
+        dir2.position.set(-500, 500, 500);
+        scene.add(dir2);
+
+        var dir3 = new THREE.DirectionalLight(0xffffff,0.2);
+        dir3.position.set(500, 500, -500);
+        scene.add(dir3);
+
+        var dir4 = new THREE.DirectionalLight(0xffffff,0.2);
+        dir3.position.set(500, -500, 500);
+        scene.add(dir4);
+
+        /*var dir5 = new THREE.DirectionalLight(0xffffff,0.3);
+        dir5.position.set(-500, -500, -500);
+        scene.add(dir5);*/
+
+        /*var dir6 = new THREE.DirectionalLight(0xffffff,0.3);
+        dir6.position.set(500, 500, 500);
+        scene.add(dir6);*/
+
+        var dir7 = new THREE.DirectionalLight(0xffffff,0.3);
+        dir7.position.set(-500, -500, 500);
+        scene.add(dir7);
+
+        var dir8 = new THREE.DirectionalLight(0xffffff,0.35);
+        dir8.position.set(500, -500, -500);
+        scene.add(dir8);
+        // This also called infinite light. The light rays from this light can be seen as parallel, like the light from the sun. This light can also be used to create shadows.
+
+
+
+        // add spotlight for the shadows
+        var spotLight = new THREE.SpotLight(0xffffff, 0.35);
+        spotLight.position.set(150, 100, 150);
+        scene.add(spotLight);
+        // Spotlight source has a cone-like effect like that of a desklamp, a spot in the celling, or a torch. This light can cast shadows.
+
+        var hemiLight = new THREE.HemisphereLight(0x0000ff, 0x00ff00, 0.6);
+        hemiLight.position.set(0, 500, 0);
+        scene.add(hemiLight);
+        // This is a special light and can be used to create more natural-looking outdoors lighting by simulating a reflective surface and a faintly illuminating sky. This light also doesn't provide any shadow-related functionality.
+
+
+        var ambiColor = "#1c1c1c";
+        var ambientLight = new THREE.AmbientLight(ambiColor);
+        ambientLight.intensity = 0.5
+        scene.add(ambientLight);
+
+        
+
+        // add the output of the renderer to the html element
+        document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+
+        // call the render function
+        var step = 0;
+
+
+        // setup the control gui
+        var controls = new function () {
+            // we need the first child, since it's a multimaterial
+
+
+        };
+
+        var group;
+        var gui = new dat.GUI();
+
+
+        var loader = new THREE.STLLoader();
+        var group = new THREE.Object3D();
+        loader.load("../assets/models//lotus.stl", function (geometry) {
+
+            console.log(geometry);
+            var mat = new THREE.MeshLambertMaterial({color:0x7777ff});
+            group = new THREE.Mesh(geometry, mat);
+            group.rotation.x = -0.5 * Math.PI;
+            group.scale.set(18, 18 , 18);
+            scene.add(group);
+
+            geometry.traverse(function (child) {
+                if (child instanceof THREE.Mesh) {
+//                    child.material = new THREE.MeshLambertMaterial({color:0xaaaaaa});
+                    console.log(child.geometry);
+                }
+            });
+
+            geometry.scale.set(10, 10, 10);
+
+            scene.add(geometry);
+
+        });
+
+
+        render();
+
+
+        function render() {
+            stats.update();
+
+            orbit.update();
+
+            if (group) {
+                //group.rotation.y += 0.006;
+                group.rotation.x+=0.006;
+            }
+
+            // render using requestAnimationFrame
+            requestAnimationFrame(render);
+            webGLRenderer.render(scene, camera);
+        }
+
+        function initStats() {
+
+            var stats = new Stats();
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+
+            return stats;
+        }
+    }
+    window.onload = init;
+</script>
+</body>
+</html>

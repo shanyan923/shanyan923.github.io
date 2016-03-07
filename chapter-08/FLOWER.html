@@ -10,6 +10,7 @@
 
     <script type="text/javascript" src="../libs/stats.js"></script>
     <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <script type="text/javascript" src="../libs/OrbitControls.js"></script>
     <style>
         body {
             /* set margin to 0 and overflow to hidden, to go fullscreen */
@@ -64,6 +65,7 @@
 
         // call the render function
         var step = 0;
+        var orbit = new THREE.OrbitControls(camera);
 
 
         // setup the control gui
@@ -101,6 +103,8 @@
 
         function render() {
             stats.update();
+
+            orbit.update();
 
             if (mesh) {
                 mesh.rotation.y += 0.006;
