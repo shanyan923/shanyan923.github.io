@@ -10,6 +10,7 @@
     <script type="text/javascript" src="../libs/stats.js"></script>
     <script type="text/javascript" src="../libs/dat.gui.js"></script>
     <script type="text/javascript" src="../libs/OrbitControls.js"></script>
+    <script src="../libs/FirstPersonControls.js"></script>
     <style>
         body {
             /* set margin to 0 and overflow to hidden, to go fullscreen */
@@ -47,8 +48,6 @@
         webGLRenderer.setSize(window.innerWidth, window.innerHeight);
         webGLRenderer.shadowMapEnabled = true;
 
-        webGLRenderer.sortObjects = false;
-
 
         // position and point the camera to the center of the scene
         camera.position.x = 150;
@@ -83,6 +82,16 @@
         dir5.position.set(0, 0, -130);
         scene.add(dir5);
 
+        var listener1 = new THREE.AudioListener();
+        camera.add(listener1);
+
+        var sound1 = new THREE.Audio(listener1);
+        sound1.load('../assets/audio/nature.ogg');
+        sound1.setRefDistance(200);
+        sound1.setLoop(true);
+        sound1.setRolloffFactor(2);
+        scene.add(sound1);
+
 
 
         // add the output of the renderer to the html element
@@ -97,7 +106,7 @@
             // we need the first child, since it's a multimaterial
             this.intensity = 1 ;
             this.rotationSpeed = 0.006;
-            this.color = 0x7777ff;
+            this.color = "#7777ff";
 
             this.scaleX = 19;
             this.scaleY = 19;
@@ -132,9 +141,12 @@
             spotLight.intensity = e ;
         });
 
-        gui.add(controls, 'rotationSpeed' , 0, 0.5);
+        gui.add(controls, 'rotationSpeed' , 0, 0.1);
 
-        gui.addColor(controls, 'color').onChange(controls.mat);
+        gui.addColor(controls, 'color').onChange(function (value){
+            spotLight.color.setHex( value.replace("#", "0x"));
+
+        });
 
         guiScale = gui.addFolder('scale');
         guiScale.add(controls, 'scaleX', 0, 55);
