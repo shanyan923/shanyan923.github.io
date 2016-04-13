@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>10.05 dynamic envmap</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script src="../libs/three.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <script src="../libs/OrbitControls.js"></script>
+    <script type="text/javascript" src="../libs/jquery-1.9.0.js"></script>
+    <script type="text/javascript" src="../libs/jquery-1.7.2.min.js"></script>
+
+    <audio id="soundtrack" autoplay loop style="display:none">
+    <source src="../assets/audio/jazz.ogg" type='audio/ogg'>
+    </audio>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #sound{
+            width: 80px;
+            height:40px;
+            background: white;
+            z-index: 10000;
+            float: right;
+            position: absolute;
+            font-size: 15px;
+            }
+        #sound:hover{
+            background:skyblue;
+        }
+
+    </style>
+</head>
+<body>
+<button id="sound">Mute</button>
+
+<script>
+
+    // use clock from http://saturnboy.com/2013/10/html5-canvas-clock/
+    // draw a clock on all sides of a cube
+
+    // global variables
+    var renderer;
+    var scene;
+    var camera, cubeCamera;
+
+    //var control;
+    var orbit;
+
+    var textureCube;
+    var textureRoom;
+
+    var skybox;
+
+    var cubeShader, roomShader;
+    //var material_1, material_2;
+
+
+    function init() {
+
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        scene = new THREE.Scene();
+
+        // create a camera, which defines where we're looking at.
+        camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 10000);
+
+        orbit = new THREE.OrbitControls(camera);
+
+        // create a render, sets the background color and the size
+        renderer = new THREE.WebGLRenderer();
+        renderer.setClearColor(0x000000, 1.0);
+        renderer.setSize(window.innerWidth, window.innerHeight);
+
+      
+        textureCube.format = THREE.RGBFormat;
+
+        // create a custom shader
+        cubeShader = THREE.ShaderLib["cube"];
+        cubeShader.uniforms["tCube"].value = textureCube;
+
+        cubeMaterial = new THREE.ShaderMaterial({
+
+            fragmentShader: cubeShader.fragmentShader,
+            vertexShader: cubeShade.vertexShader,
+            uniforms: cubeShade.uniforms,
+            depthWrite: false,
+            side: THREE.DoubleSide
+
+        });
+
+        
+        textureRoom.format = THREE.RGBFormat;
+
+        // create a custom shader
+        roomShader = THREE.ShaderLib["cube"];
+        roomShader.uniforms["tCube"].value = textureRoom;
+
+        roomMaterial = new THREE.ShaderMaterial({
+
+            fragmentShader: roomShader.fragmentShader,
+            vertexShader: roomShader.vertexShader,
+            uniforms: roomShader.uniforms,
+            depthWrite: false,
+            side: THREE.DoubleSide
+
+        });
+
+        // create the skybox
+        skybox = new THREE.Mesh(new THREE.BoxGeometry(10000, 10000, 10000), cubeMaterial);
+        scene.add(skybox);
+
+
+        cubeCamera = new THREE.CubeCamera(0.1, 20000, 256);
+        scene.add(cubeCamera);
+
+
+        // position and point the camera to the center of the scene
+        camera.position.x = 0;
+        camera.position.y = 5;
+        camera.position.z = 33;
+        camera.lookAt(scene.position);
+
+        // add the output of the renderer to the html element
+        document.body.appendChild(renderer.domElement);        
+
+    //function createCubeMap() {
+
+        var path = "../assets/textures/cubemap/parliament/";
+        var format = '.jpg';
+        var urls = [
+            path + 'right' + format, path + 'left' + format,
+            path + 'top' + format, path + 'bottom' + format,
+            path + 'back' + format, path + 'front' + format
+        ];
+
+
+       textureCube = THREE.ImageUtils.loadTextureCube( urls );
+       textureCube.mapping = THREE.CubeReflectionMapping;
+
+        var path = "../assets/textures/cubemap/parliament/";
+        var format = '.jpg';
+        var urls = [
+            path + 'posx' + format, path + 'negx' + format,
+            path + 'posy' + format, path + 'negy' + format,
+            path + 'posz' + format, path + 'negz' + format
+        ];
+
+
+       textureRoom = THREE.ImageUtils.loadTextureCube( urls );
+       textureRoom.mapping = THREE.CubeReflectionMapping;
+
+
+    var params = {
+
+           C1: function() {
+
+                 skybox.material = cubeMaterial;
+                 skybox.visible = true;
+                 console.log("C1.");
+                 
+            },
+
+           C2: function() {
+
+                 skybox.material = roomMaterial;
+                 skybox.visible = true;
+                 console.log("C2.");
+                 
+            },
+
+    };
+
+    var gui = new dat.GUI();
+    gui.add(params, 'C1');
+    gui.add(params, 'C2');
+
+    gui.open();
+
+}
+
+
+    var toggle = 1;
+
+    function render() {
+
+        orbit.update();
+
+        $('#sound').unbind('click').click(function(){
+                toggle = -toggle;
+                if(toggle==-1){
+
+                soundtrack.pause();
+                $('#sound').html('Unmute');
+            }
+            else if(toggle==1){
+                soundtrack.play();
+                $('#sound').html('Mute');
+            }
+            });
+
+
+        sphere.visible = false;
+        cubeCamera.updateCubeMap(renderer, scene);
+        sphere.visible = true;
+
+
+        renderer.render(scene, camera);
+        /*scene.getObjectByName('box').rotation.x += control.rotationSpeed;
+        scene.getObjectByName('box').rotation.y += control.rotationSpeed;
+        scene.getObjectByName('cylinder').rotation.x += control.rotationSpeed;*/
+
+
+        requestAnimationFrame(render);
+
+    }
+
+    // calls the init function when the window is done loading.
+    window.onload = init;
+
+
+</script>
+<body>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+    <title>Cube </title>
+    <meta charset = "utf-8">
+    <meta name = "viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale =1.0">
+    <script type="text/javascript" src="../libs/three.js"></script>
+    <script type="text/javascript" src="../libs/stats.js"></script>
+    <script type="text/javascript" src="../libs/dat.gui.js"></script>
+    <script type="text/javascript" src="../libs/OrbitControls.js"></script>
+    <script type="text/javascript" src="../libs/Detector.js"></script>
+    <script type="text/javascript" src="../libs/RequestAnimationFrame.js"></script>
+
+    
+    <audio id="soundtrack" autoplay loop style="display:none">
+    <source src="../assets/audio/nature.ogg" type='audio/ogg'>
+    </audio>
+
+    <style>
+        body {
+            /* set margin to 0 and overflow to hidden, to go fullscreen */
+            background-color:#f0f0f0;
+            margin: 0;
+            overflow: hidden;
+        }
+        #info {
+            position: absolute;
+            top:0px; width:100%;
+            padding: 5px;
+            text-align: center;   
+        }
+        #sound{
+            width: 110px;
+            height:60px;
+            background: #39b0b4;
+            z-index: 10000;
+            float: right;
+            position: absolute;
+            font-size: 18px;
+            }
+        #sound:hover{
+            background:gray;
+        }
+    </style>
+</head>
+<body>
+
+<script type="text/javascript">
+   var_gaq = _gaq || [];
+   _gaq.push(['_setAccount', 'UA-86951-7']);
+   _gaq.push(['_trackPageview']);
+
+   (function() {
+      var ga= document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www' + ' .google-analytics.com/ga.js';
+        (document.getElementByTagName('head')[0]|| document.getElementByTagName('body')[0]).appendChild(ga);
+   })();
+</script>
+<div id="info">< a href = "index2.html">more wavy</a></div>
+
+<button id="sound">Mute</button>
+<div id="Stats-output">
+</div>
+<!-- Div which will hold the Output -->
+<div id="WebGL-output">
+</div>
+
+<!-- Javascript code that runs our Three.js examples -->
+<script type="text/javascript">
+
+    // once everything is loaded, we run our Three.js stuff.
+    var size = 10, res = 32, sizeres = size*res, halfsizeres = sizeres/2;
+    var buffer1 = [], buffer2 = [], temp;
+    var grid = [], plane;
+    var light, renderer;
+    var geometry, material;
+    var mouse, projector, ray, intersects = [];
+
+    if (Detector.webgl){
+
+           init();
+           animate();
+
+    } else {
+
+           document.body.appendChild( Detector.getWebGLErrorMessage());
+    }
+
+    function init() {
+
+        var container= document.create.createElement('div');
+        document.body.appendChild(container);
+
+        var stats = new Stats();
+        stats.domElement.style.position = 'absolute';
+        stats.domElement.style.top = '0px';
+        //container.appendChild(stats.doElement);
+
+        for (var i=0, 1= res*res; i<1; i++){
+
+                 buffer1[ i ] = 0;
+                 buffer2[ i ] = 0;
+
+        }
+
+        // create a scene, that will hold all our elements such as objects, cameras and lights.
+        var scene = new THREE.Scene();
+
+        // create a camera, which defines where we're looking at.
+        var camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 1, 2000);
+        camera.position.x = 100 + sizeres;
+        camera.position.y = 200;
+        camera.position.z =100 + sizeres;
+        camera.lookAt(new THREE.Vector3( halfsizeres, -50, halfsizeres));
+        scene.add(camera);
+
+        var orbit = new THREE.OrbitControls(camera);
+
+        //add light
+        scene.add(new THREE.AmbientLight(0x808080));
+        light = new THREE.SpotLight (0xfffff, 1.25);
+        light.position.set(-500, 900, 600);
+        light.target.position.set(halfsizeres, 0, halfsizeres);
+        light.castShadow = true ;
+        scene.add(light);
+
+        geometry = new THREE.CubeGeometry (size, size, size);
+        geometry.applyMatrix( new THREE.Matrix4().setTranslation(0, size/ 2, 0));
+        material = new THREE.MeshLambertMaterial( {color:0xd0d0d0} );
+
+        for (var i=0, 1= res*res; i< 1; i++){
+
+             cube = new THREE.Mesh( geometry, material);
+             cube.position.x = size + (( i % res) * 10);
+             cube.position.z = size +  (Math.floor(i/res)*10);
+             cube.receiveShadow = true;
+             scene.add( cube );
+
+             grid.push( cube );
+        }
+
+        
+
+
+
+
+
+        // create a render and set the size
+        var Renderer = new THREE.WebGLRenderer();
+        webGLRenderer.setClearColor(new THREE.Color(0x000000, 1.0));
+        webGLRenderer.setSize(window.innerWidth, window.innerHeight);
+        webGLRenderer.shadowMapEnabled = true;
+
+
+        
+
+        var soundVal = 1.0, sign = 1.0;
+        var soundtrack;
+        soundtrack = document.getElementById ('soundtrack');
+
+
+
+
+        // add the output of the renderer to the html element
+        document.getElementById("WebGL-output").appendChild(webGLRenderer.domElement);
+
+        // call the render function
+        var step = 0;
+
+
+        // setup the control gui
+        /*var controls = new function () {
+            // we need the first child, since it's a multimaterial
+            this.intensity = 1 ;
+            this.rotationSpeed = 0.006;
+            this.color = "#7777ff";
+
+            this.scaleX = 19;
+            this.scaleY = 19;
+            this.scaleZ = 19;
+
+            this.positionX = 150;
+            this.positionY = 120;
+            this.positionZ = 130;
+
+            this.translateX = 150;
+            this.translateY = 120;
+            this.translateZ = 130;
+
+            this.translate = function () {
+
+                group.translateX(controls.translateX);
+                group.translateY(controls.translateY);
+                group.translateZ(controls.translateZ);
+
+                controls.positionX = group.position.x;
+                controls.positionY = group.position.y;
+                controls.positionZ = group.position.z;
+            }
+
+
+        };*/
+
+
+        var group;
+        var gui = new dat.GUI();
+        gui.add (controls, 'intensity' , 0, 3).onChange(function (e) {
+            spotLight.intensity = e ;
+        });
+
+        gui.add(controls, 'rotationSpeed' , 0, 0.1);
+
+        gui.addColor(controls, 'color').onChange(function (value){
+            spotLight.color.setHex( value.replace("#", "0x"));
+
+        });
+
+
+        
+    
+
+
+        render();
+
+var toggle = 1;
+        function render() {
+            soundVal += sign*0.01;
+            soundVal = THREE.Math.clamp (soundVal, 0, 1);
+            soundtrack.volume = soundVal;
+
+            stats.update();
+            orbit.update();
+            group.scale.set(controls.scaleX, controls.scaleY, controls.scaleZ);
+
+            if (group) {
+                group.rotation.z += 0.006;
+                // group.rotation.x+=0.006;
+            }
+
+            // render using requestAnimationFrame
+            group.rotation.z = step += controls.rotationSpeed;
+            requestAnimationFrame(render);
+            webGLRenderer.render(scene, camera);
+            $('#sound').unbind('click').click(function(){
+                toggle = -toggle;
+                if(toggle==-1){
+
+                soundtrack.pause();
+                $('#sound').html('Unmute');
+            }
+            else if(toggle==1){
+                soundtrack.play();
+                $('#sound').html('Mute');
+            }
+            });
+        }
+
+        function initStats() {
+
+            var stats = new Stats();
+            stats.setMode(0); // 0: fps, 1: ms
+
+            // Align top-left
+            stats.domElement.style.position = 'absolute';
+            stats.domElement.style.left = '0px';
+            stats.domElement.style.top = '0px';
+
+            document.getElementById("Stats-output").appendChild(stats.domElement);
+
+            return stats;
+        }
+    }
+    window.onload = init;
+</script>
+</body>
+</html>
