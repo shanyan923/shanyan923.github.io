@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>10.05 dynamic envmap</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <script src="../libs/three.js"></script>
+    <script src="../libs/dat.gui.js"></script>
+    <script src="../libs/OrbitControls.js"></script>
+    <script type="text/javascript" src="../libs/jquery-1.9.0.js"></script>
+    <script type="text/javascript" src="../libs/jquery-1.7.2.min.js"></script>
+
+    <audio id="soundtrack" autoplay loop style="display:none">
+    <source src="../assets/audio/jazz.ogg" type='audio/ogg'>
+    </audio>
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background: #000;
+            color: :#fff;
+            padding: 0;
+
+        }
+
+        #sound{
+            width: 105px;
+            height:40px;
+            background: white;
+            top:5px;
+            z-index: 10000;
+            float: right;
+            position: absolute;
+            font-size: 15px;
+            }
+        #sound:hover{
+            background:skyblue;
+        }
+
+        #Rotate{
+            width: 105px;
+            height:40px;
+            background: white;
+            z-index: 10000;
+            float: right;
+            top:45px;
+            position: absolute;
+            font-size: 15px;
+            }
+        #Rotate:hover{
+            background:skyblue;
+        }
+
+    </style>
+</head>
+<body>
+<button id="sound">Mute</button>
+<button id="Rotate">RotateScene</button>
+
+<script>
+
+    var controls, camera, scene, renderer;
+    var cameraCube, sceneCube;
+    var textureEquirec, textureCube, textureSphere,textureSky;
+    var cubeMesh_1, cubeMesh_2, cubeMesh_3;
+    var sphereMaterial,equirectMaterial;
+    var refract;
+    var equirectShader;
+
+    init();
+    animate();
+
+    function init(){
+         
+         //cameras
+          camera = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 100000 );
+          camera.position.set( 0, 0, 1000 );
+          cameraCube = new THREE.PerspectiveCamera( 50, window.innerWidth / window.innerHeight, 1, 100000 );
+          controls = new THREE.OrbitControls( camera );
+          controls.minDistance = 100;
+          controls.maxDistance = 5000;
+
+          //scene
+
+          scene = new THREE.Scene();
+          sceneCube = new THREE.Scene();
+
+          //lights
+
+          var ambient = new THREE.AmbientLight(0xfff, 0.001);
+          scene.add( ambient);
+
+          //Texutures
+
+          var path = "../assets/textures/cubemap/parliament/";
+          var format = '.jpg';
+          var urls = [
+                      path + 'right' + format, path + 'left' + format,
+                      path + 'top' + format, path + 'bottom' + format,
+                      path + 'back' + format, path + 'front' + format
+                      
+                      ];
+
+          //textureCube = new THREE.CubeTextureLoader().load( urls);
+          textureCube = THREE.ImageUtils.loadTextureCube( urls );
+          textureCube.format = THREE.RGBFormat;
+          textureCube.mapping = THREE.CubeReflectionMapping;
+
+          var path = "../assets/textures/cubemap/parliament/";
+          var format = '.jpg';
+          var urls = [
+                      path + 'posx' + format, path + 'negx' + format,
+                      path + 'posy' + format, path + 'negy' + format,
+                      path + 'posz' + format, path + 'negz' + format
+                      
+                      ];
+
+          //textureCube = new THREE.CubeTextureLoader().load( urls);
+          textureEquirec = THREE.ImageUtils.loadTextureCube( urls );
+          textureEquirec.format = THREE.RGBFormat;
+          textureEquirec.mapping = THREE.CubeReflectionMapping;
+
+          /*var path = "../assets/textures/cubemap/parliament/";
+          var format = '.jpg';
+          var urls = [
+                      path + 'px' + format, path + 'nx' + format,
+                      path + 'py' + format, path + 'ny' + format,
+                      path + 'pz' + format, path + 'nz' + format
+                      
+                      ];
+
+          //textureCube = new THREE.CubeTextureLoader().load( urls);
+          textureSky = THREE.ImageUtils.loadTextureCube( urls );
+          textureSky.format = THREE.RGBFormat;
+          textureSky.mapping = THREE.CubeReflectionMapping;*/
+
+
+          var textureSphere = THREE. ImageUtils.loadTexture("../assets/textures/cubemap/metal.jpg" );
+          textureSphere.mapping = THREE.SphericalReflectionMapping;
+
+
+          //Materials
+
+          var equirectShader = THREE.ShaderLib["cube"];
+
+          var equirectMaterial = new THREE.ShaderMaterial( {
+                    fragmentShader: equirectShader.fragmentShader,
+                    vertexShader: equirectShader.vertexShader,
+                    uniforms: equirectShader.uniforms,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                } );
+          
+          equirectMaterial.uniforms[ "tCube" ].value = textureEquirec;
+
+
+          var cubeShader = THREE.ShaderLib[ "cube" ];
+          var cubeMaterial = new THREE.ShaderMaterial( {
+                    fragmentShader: cubeShader.fragmentShader,
+                    vertexShader: cubeShader.vertexShader,
+                    uniforms: cubeShader.uniforms,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                } );
+          
+          cubeMaterial.uniforms[ "tCube" ].value = textureCube;
+
+          /*var skyShader = THREE.ShaderLib[ "cube" ];
+          var skyMaterial = new THREE.ShaderMaterial( {
+                    fragmentShader: skyShader.fragmentShader,
+                    vertexShader: skyShader.vertexShader,
+                    uniforms: skyShader.uniforms,
+                    depthWrite: false,
+                    side: THREE.DoubleSide
+                } );
+          
+          skyMaterial.uniforms[ "tCube" ].value = textureSky;*/
+
+          //Skybox
+
+          cubeMesh_1 = new THREE.Mesh( new THREE.BoxGeometry ( 100, 100, 100), cubeMaterial);
+          sceneCube.add(cubeMesh_1);
+
+          cubeMesh_2 = new THREE.Mesh( new THREE.BoxGeometry ( 100, 100, 100), equirectMaterial);
+          sceneCube.add(cubeMesh_2);
+
+          /*cubeMesh_3 = new THREE.Mesh( new THREE.BoxGeometry ( 100, 100, 100), skyMaterial);
+          sceneCube.add(cubeMesh_3);*/
+
+          // sphere
+
+          //var sphereMaterial = new THREE.MeshBasicMaterial({envMap: cameraCube.renderTarget, side: THREE.DoubleSide});
+          var sphereMaterial = new THREE.MeshBasicMaterial({envMap: textureCube, side: THREE.DoubleSide});
+
+          var geometry = new THREE.SphereGeometry( 200, 24, 24 );
+          //sphereMaterial = new THREE.MeshLambertMaterial( { envMap: textureCube});
+          sphereMesh = new THREE.Mesh(geometry, sphereMaterial );
+          scene.add( sphereMesh );
+
+          //renderer
+
+          renderer = new THREE.WebGLRenderer();
+          renderer.autoClear = false;
+          renderer.setSize( window.innerWidth, window.innerHeight );
+          renderer.setFaceCulling( THREE.CullFaceNone );
+          document.body.appendChild( renderer.domElement );
+
+          //Switch Function
+
+          var params = {
+                    Cube: function () {
+                        cubeMesh_1.material = cubeMaterial;
+                        cubeMesh_1.visible = true;
+                        sphereMaterial.envMap = textureCube;
+                        sphereMaterial.needsUpdate = true;
+                        console.log("Cube.");
+                    },
+
+                    Equirectangular: function () {
+                        cubeMesh_1.material = equirectMaterial;
+                        cubeMesh_2.visible = true;
+                        sphereMaterial.envMap = textureEquirec;
+                        sphereMaterial.needsUpdate = true;
+                        console.log("Equirectangular.");
+                    },
+
+                    /*Sky: function () {
+                        cubeMesh_1.material = skyMaterial;
+                        cubeMesh_3.visible = true;
+                        sphereMaterial.envMap = textureSky;
+                        sphereMaterial.needsUpdate = true;
+                        console.log("Sky.");
+                    },*/
+                    
+                    Refraction: false
+                };
+
+            var gui = new dat.GUI();
+                gui.add( params, 'Cube' );
+                gui.add( params, 'Equirectangular' );
+                //gui.add( params, 'Sky' );
+                /*gui.add( params, 'Refraction' ).onChange( function( value ) {
+                    if ( value ) {
+                        textureEquirec.mapping = new THREE.UVMapping;
+                        textureCube.mapping = THREE.CubeRefractionMapping;
+                    } else {
+                        textureEquirec.mapping = new THREE.UVMapping;
+                        textureCube.mapping = THREE.CubeReflectionMapping;
+                    }
+                    sphereMaterial.needsUpdate = true;
+                } );*/
+                gui.open();
+
+                //window.addEventListener( 'resize', onWindowResize, false );
+            }
+
+            function onWindowResize() {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                cameraCube.aspect = window.innerWidth / window.innerHeight;
+                cameraCube.updateProjectionMatrix();
+                renderer.setSize( window.innerWidth, window.innerHeight );
+            }
+
+        
+        function animate() {
+                requestAnimationFrame( animate );
+                render();
+                controls.update();
+                //controls.autoRotate = true;
+            }
+            
+        var toggle_1 = 1;
+
+        function render() {
+
+               $('#Rotate').unbind('click').click(function(){
+                      toggle_1 = -toggle_1;
+                      if (toggle_1== -1){
+
+                        controls.autoRotate = true;
+                        $('#Rotate').html('Stop');
+                      }
+
+                      else if (toggle_1==1){
+                         controls.autoRotate = false;
+                         $('#Rotate').html('RotateScene');
+                      }
+               });
+
+                var timer = -0.0002 * Date.now();
+                camera.lookAt( scene.position );
+                cameraCube.rotation.copy( camera.rotation );
+                renderer.render( sceneCube, cameraCube );
+                renderer.render( scene, camera );
+            }
+
+
+
+
+
+
+</script>
+<body>
+</body>
+</html>
